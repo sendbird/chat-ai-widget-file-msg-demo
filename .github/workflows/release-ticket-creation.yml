@@ -5,9 +5,6 @@ on:
       branch_name:
         description: 'Type a branch name starting with `release/v`'
         required: true
-  push:
-    branches:
-      - 'feat/AC-1856'
 
 jobs:
   trigger-release-ticket-creation:
@@ -28,17 +25,15 @@ jobs:
         id: check_branch
         run: |
           set -x
-          set -o pipefail
           branch_name="${{ github.event.inputs.branch_name }}"
-          git ls-remote --exit-code --heads origin "$branch_name" | grep -q "$branch_name"
-          if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
+          if git ls-remote --exit-code --heads origin "$branch_name" | grep -q "$branch_name"; then
             echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
           else
             echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
           fi
 
       - name: Create branch if it doesn't exist
-        if: steps.check_branch.outputs.branch_exists == 1
+        if: ${{ env.BRANCH_EXISTS == 'false' }}
         run: |
           branch_name="${{ github.event.inputs.branch_name }}"
           git checkout -b "$branch_name"
